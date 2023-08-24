@@ -18,8 +18,8 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
- * @author huangwh
- * @since 2020-09-24 16:21
+ * @author zy
+ * @since 2023-08-24 10:21
  */
 @Data
 @ApiModel(value = "AppAccountBindGroupDTO对象", description = "获取已绑定/未绑定帐号列表")
@@ -42,8 +42,8 @@ package com.paraview.idm.client.permission.request;
 import lombok.Data;
 
 /**
- * @author huangwh
- * @since 2020-09-24 16:21
+ * @author zy
+ * @since 2023-08-24 10:21
  */
 @Data
 /**
