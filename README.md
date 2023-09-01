@@ -2,7 +2,7 @@
 
 ### Swagger 注解替换为文档注释工具类
 
-此项目主要是实现了将 Swagger 注解替换为文档注释的功能，目前支持的注解有： @ApiModelPropert、@ApiModel
+此项目主要是实现了将 Swagger 注解替换为文档注释的功能，目前支持的注解有： @ApiModelPropert、@ApiModel、@ApiOperation、@ApiResponse、@ApiImplicitParam、@ApiImplicitParams
 
 
 ### 执行效果

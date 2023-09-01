@@ -30,7 +30,7 @@ public class SwaggerToDocCommentConverter {
 
     private static List<File> javaFiles = new ArrayList<>();
     private static Map<String, byte[]> javaFileBytesMap = new HashMap<>();
-    private static String directoryPath = "/Users/dearzhang/info/git-work/java-work/springboot-remove-swagger/src/main/java/com/hongyan/study/springbootremoveswagger/demo";
+    private static String directoryPath = "/Users/dearzhang/paraview/code/iam/idm/idm-client/src/main/java/com/paraview/idm/client/permission/request";
 
     static {
         collectJavaFiles(new File(directoryPath), javaFiles);
@@ -69,17 +69,21 @@ public class SwaggerToDocCommentConverter {
      * @throws IOException
      */
     public static byte[] fileToByteArray(String filePath) throws IOException {
+        // method 1
         File file = new File(filePath);
-        byte[] buffer = new byte[(int) file.length()];
+        return FileCopyUtils.copyToByteArray(file);
+        // method 2
+//        File file = new File(filePath);
+//        byte[] buffer = new byte[(int) file.length()];
+//
+//        try (FileInputStream fis = new FileInputStream(file)) {
+//            int bytesRead = fis.read(buffer);
+//            if (bytesRead != buffer.length) {
+//                throw new IOException("Failed to read the whole file");
+//            }
+//        }
+//        return buffer;
 
-        try (FileInputStream fis = new FileInputStream(file)) {
-            int bytesRead = fis.read(buffer);
-            if (bytesRead != buffer.length) {
-                throw new IOException("Failed to read the whole file");
-            }
-        }
-
-        return buffer;
     }
 
     /**
@@ -103,7 +107,7 @@ public class SwaggerToDocCommentConverter {
 
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.contains("import io.swagger.annotations.")) {
+                if (removeTarget(line)) {
                     continue; // Skip Swagger import statements
                 }
                 if (containApiModel(line)) {
@@ -111,6 +115,9 @@ public class SwaggerToDocCommentConverter {
                     writer.write("/**\n * " + description + "\n */\n");
                 } else if (containApiModelProperty(line)) {
                     String modifiedLine = convertLine(line);
+                    writer.write(modifiedLine + "\n");
+                } else if (containApiOperation(line)) {
+                    String modifiedLine = convertApiOperationLine(line);
                     writer.write(modifiedLine + "\n");
                 } else {
                     writer.write(line + "\n");
@@ -122,10 +129,27 @@ public class SwaggerToDocCommentConverter {
     }
 
 
-
+    /**
+     * 需要删除跳过的行
+     * @param line
+     * @return
+     */
+    private static Boolean removeTarget(String line) {
+        if (line.contains("import io.swagger.annotations.")) {
+            return true;
+        }
+        if (line.contains("@ApiResponse(") && line.contains(")")) {
+            return true;
+        }
+        if (line.contains("@ApiImplicitParam")) {
+            return true;
+        }
+        return false;
+    }
 
     /**
      * 判断是否包含@ApiModel注解
+     * 例：@ApiModel(value = "AppAccountBindGroupDTO对象", description = "获取已绑定/未绑定帐号列表")
      * @param line
      * @return
      */
@@ -134,7 +158,37 @@ public class SwaggerToDocCommentConverter {
     }
 
     /**
+     * 判断是否包含@ApiOperation注解
+     * @param line
+     * @return
+     */
+    private static Boolean containApiOperation(String line) {
+        return line.contains("@ApiOperation(") && line.contains(")");
+    }
+
+    /**
+     * 将@ApiModelProperty注解转换为文档注释
+     * @param line
+     * @return
+     */
+    private static String convertApiOperationLine(String line) {
+        Pattern pattern = Pattern.compile("@ApiOperation\\(\"(.*)\"\\)");
+        if (line.contains("@ApiOperation(value")) {
+            pattern = Pattern.compile("value\\s*=\\s*\"(.*)\"");
+        }
+        Matcher matcher = pattern.matcher(line);
+
+        if (matcher.find()) {
+            String description = matcher.group(1);
+            return "\t/**\n\t * " + description + "\n\t */";
+        }
+
+        return line;
+    }
+
+    /**
      * 提取@ApiModel注解的描述
+     * 例：@ApiModel(value = "AppAccountBindGroupDTO对象", description = "获取已绑定/未绑定帐号列表")
      * @param line
      * @return
      */
@@ -152,22 +206,25 @@ public class SwaggerToDocCommentConverter {
 
     /**
      * 判断是否包含@ApiModelProperty注解
+     * 例：@ApiModelProperty("组id，多个以逗号分隔")
      * @param line
      * @return
      */
     private static Boolean containApiModelProperty(String line) {
-        Pattern pattern = Pattern.compile("@ApiModelProperty\\(\"(.*)\"\\)");
-        Matcher matcher = pattern.matcher(line);
-        return matcher.find();
+        return line.contains("@ApiModelProperty(") && line.contains(")");
     }
 
     /**
      * 将@ApiModelProperty注解转换为文档注释
+     * 例：@ApiModelProperty("组id，多个以逗号分隔")
      * @param line
      * @return
      */
     private static String convertLine(String line) {
         Pattern pattern = Pattern.compile("@ApiModelProperty\\(\"(.*)\"\\)");
+        if (line.contains("@ApiModelProperty(value")) {
+            pattern = Pattern.compile("value\\s*=\\s*\"(.*)\"");
+        }
         Matcher matcher = pattern.matcher(line);
 
         if (matcher.find()) {
